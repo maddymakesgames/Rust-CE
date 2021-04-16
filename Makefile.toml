@@ -1,0 +1,106 @@
+[env]
+# Path to CE Toolchain files
+CEDEV = "/opt/CEdev"
+# Name to display in calculator
+EXECUTABLE_NAME = "DEMO"
+
+[tasks.format]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt", "--", "--emit=files"]
+
+[tasks.clean]
+dependencies = [
+    "clean_incremental",
+    "clean_bin"
+]
+
+[tasks.clean_bin]
+command = "rm"
+args = ["./bin", "-rf"]
+
+[tasks.clean_incremental]
+command = "rm"
+args = ["./incremental", "-rf"]
+
+[tasks.ce]
+dependencies = [
+    "make_output",
+    "compile_rust",
+    "hack_target",
+    "transpile_llvm_ir",
+    "compile_asm",
+    "make_8xp",
+    "clean_incremental"
+]
+
+[tasks.make_output]
+dependencies = [
+    "make_bin",
+    "make_incremental"
+]
+
+[tasks.make_bin]
+command = "mkdir"
+args = [
+    "-p",
+    "bin"
+]
+
+[tasks.make_incremental]
+command = "mkdir"
+args = [
+    "-p",
+    "incremental"
+]
+
+[tasks.compile_rust]
+command = "rustc"
+args = [
+    "--emit=llvm-ir", 
+    "-C", "debuginfo=0",
+    "./src/main.rs", 
+    "--target=wasm32-unknown-unknown",
+    "-o", "./incremental/${CARGO_MAKE_PROJECT_NAME}.ll"
+]
+
+[tasks.hack_target]
+command = "sed"
+args = [
+    "-i",
+    "s/wasm32-unknown-unknown/ez80/",
+    "./incremental/${CARGO_MAKE_PROJECT_NAME}.ll"
+]
+
+[tasks.transpile_llvm_ir]
+command = "tools/llc"
+args = [
+    "./incremental/${CARGO_MAKE_PROJECT_NAME}.ll",
+    "-o", "./incremental/${CARGO_MAKE_PROJECT_NAME}.s"
+]
+
+[tasks.compile_asm]
+command = "${CEDEV}/bin/fasmg"
+args = [
+    "-n", 
+    '${CEDEV}/meta/ld.alm', 
+    "-i", 'DEBUG := 0', 
+    '-i', 'STATIC := 1', 
+    '-i', 'include "${CEDEV}/meta/linker_script"', 
+    '-i', 'range .bss $D031F6 : $D13FD6', 
+    '-i', 'provide __stack = $D1A87E', 
+    '-i', 'locate .header at $D1A87F', 
+    '-i', 'require __cleanup',  
+    '-i', 'source "${CEDEV}/lib/shared/crt0.src", "./incremental/${CARGO_MAKE_PROJECT_NAME}.s"', 
+    'incremental/${CARGO_MAKE_PROJECT_NAME}.bin'
+]
+
+[tasks.make_8xp]
+command = "${CEDEV}/bin/convbin"
+args = [
+    '--oformat', '8xp',
+    '--uppercase',
+    '--name', '${EXECUTABLE_NAME}',
+    '--input', 'incremental/${CARGO_MAKE_PROJECT_NAME}.bin',
+    '--output', 'bin/${EXECUTABLE_NAME}.8xp'
+]

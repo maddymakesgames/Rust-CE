@@ -3,14 +3,12 @@
 #![no_main]
 
 #[no_mangle]
-fn main() {
-    unsafe {
-        os_ClrLCD();
-        os_HomeUp();
-        os_DrawStatusBar();
-        os_PutStrFull(b"Hello from Rust!\x00");
-        while os_GetCSC() == 0 {}
-    }    
+unsafe fn main() {
+    os_ClrLCD();
+    os_HomeUp();
+    os_DrawStatusBar();
+    os_PutStrFull(b"Hello from Rust!\x00");
+    while os_GetCSC() == 0 {}
 }
 
 #[panic_handler]
@@ -19,7 +17,7 @@ fn panic(_panic: &core::panic::PanicInfo<'_>) -> ! {
 }
 
 #[allow(improper_ctypes)]
-extern {
+extern "C" {
     fn os_ClrLCD();
     fn os_HomeUp();
     fn os_DrawStatusBar();

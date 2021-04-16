@@ -7,9 +7,14 @@ This uses the include files from the [CE-Programming toolchain](https://github.c
 
 The fasmg and convbin commands are adapted from the C toolchain makefile
 
-## Building
-To build the example you need to have the [C toolchain](https://github.com/CE-Programming/toolchain) installed with the CEDEV environment variable set to the install directory
+# Building
 
-You also need to have the wasm32-unknown-unknown target installed via rustup
+## Prerequisites
+Install the [CE toolchains](https://github.com/CE-Programming/toolchain)<br>
+Install the wasm32-unknown-unknown target for rust<br>
+Install cargo make via `cargo install --force cargo-make`
+## Makefile.toml
+Set `CEDEV` to your CE toolchain install directory<br>
+Set `EXECUTABLE_NAME` to the name of your program
 
-Then run `build.sh`
+Run `cargo make ce`
